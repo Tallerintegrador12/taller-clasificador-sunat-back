@@ -16,12 +16,12 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
-# Configuración de logging (NUEVO)
+# Configuraciï¿½n de logging (NUEVO)
 logging:
   level:
     org.springframework: INFO  # Logs de Spring Framework
   file:
-    name: D:/app/logs/application.log  # Archivo donde se guardarán los logs
+    name: D:/app/logs/application.log  # Archivo donde se guardarï¿½n los logs
   pattern:
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
@@ -29,4 +29,4 @@ logging:
 sunat:
   api:
     url: https://ww1.sunat.gob.pe/ol-ti-itvisornoti/visor
-    cookies: f5avraaaaaaaaaaaaaaaa_session_=MLAOCMGEAKOILNAIDGPCMODNGBE
+    cookies: dadfa
