@@ -36,9 +36,9 @@ public class SunatNotificacionService {
     @Value("${sunat.api.url}")
     private String sunatBaseUrl;
 
-    @Value("${sunat.api.cookies}")
+    /*@Value("${sunat.api.cookies}")
     private String sunatCookie;
-
+*/
     public SunatNotificacionService(DetalleNotificacionRepository detalleNotificacionRepository, AttachmentDetalleRepository attachmentDetalleRepository, RestTemplate restTemplate, ObjectMapper objectMapper) {
         this.detalleNotificacionRepository = detalleNotificacionRepository;
         this.attachmentDetalleRepository = attachmentDetalleRepository;
@@ -49,7 +49,7 @@ public class SunatNotificacionService {
     /**
      * Consume la API de SUNAT para obtener el detalle de una notificación
      */
-    public SunatApiResponse consumirApiSunat(String codigoMensaje) {
+    public SunatApiResponse consumirApiSunat(String codigoMensaje, String sunatCookie) {
         try {
             String url = sunatBaseUrl + "/obtenerDetalleNotiMen" +
                     "?codigoMensaje=" + codigoMensaje + "&tipoMsj=2";
@@ -84,7 +84,7 @@ public class SunatNotificacionService {
      * Procesa y guarda los detalles del mensaje en la base de datos
      */
     @Transactional
-    public DetalleNotificacion procesarYGuardarNotificacion(String codigoMensaje) {
+    public DetalleNotificacion procesarYGuardarNotificacion(String codigoMensaje, String cookie) {
         try {
             // Verificar si ya existe el mensaje
             if (detalleNotificacionRepository.existsByCodMensaje(codigoMensaje)) {
@@ -94,7 +94,7 @@ public class SunatNotificacionService {
             }
 
             // Consumir API de SUNAT
-            SunatApiResponse apiResponse = consumirApiSunat(codigoMensaje);
+            SunatApiResponse apiResponse = consumirApiSunat(codigoMensaje, cookie);
 
             // Parsear el JSON del mensaje solo si es JSON válido
             MensajeDetalleDto mensajeDetalle = null;

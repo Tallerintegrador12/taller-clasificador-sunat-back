@@ -19,9 +19,10 @@ public interface MensajeSunatRepositorio extends JpaRepository<MensajeSunat, Lon
     @Query(value = """
     SELECT * 
     FROM t_mensaje_sunat 
+    WHERE vc_numero_ruc = :vc_numero_ruc
     ORDER BY TO_TIMESTAMP(vc_fecha_publica, 'DD/MM/YYYY HH24:MI:SS') DESC
     """, nativeQuery = true)
-    List<MensajeSunat> findMensajesOrdenadosPorFecha();
+    List<MensajeSunat> findMensajesOrdenadosPorFecha(String vc_numero_ruc);
 
     // Método para obtener mensajes paginados ordenados por fecha de publicación con etiqueta "00"
     @Query(value = """

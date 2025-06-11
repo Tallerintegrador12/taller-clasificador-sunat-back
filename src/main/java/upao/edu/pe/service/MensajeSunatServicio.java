@@ -40,8 +40,8 @@ public class MensajeSunatServicio {
     /**
      * Obtiene todos los mensajes ordenados por fecha de publicación con etiqueta "00"
      */
-    public List<MensajeSunat> obtenerTodosMensajes() {
-        return mensajeSunatRepositorio.findMensajesOrdenadosPorFecha();
+    public List<MensajeSunat> obtenerTodosMensajes(String vc_numero_ruc) {
+        return mensajeSunatRepositorio.findMensajesOrdenadosPorFecha(vc_numero_ruc);
     }
 
     /**

@@ -29,17 +29,17 @@ public class SunatControlador {
     private MensajeSunatServicio mensajeSunatServicio;
 
     @Autowired
-    private EtiquetaServicio etiquetaServicio;
-
-    @Autowired
     private SunatNotificacionService sunatNotificacionService;
 
     /**
      * Inicia el proceso de sincronización manual
      */
     @GetMapping("/sincronizar")
-    public ResponseEntity<RespuestaControlador<String>> sincronizarMensajes() {
-        sunatServicio.SP_CONSULTAR_Y_GUARDAR_MENSAJES();
+    public ResponseEntity<RespuestaControlador<String>> sincronizarMensajes(
+            @RequestParam("cookie") String cookieSunat) {
+
+        sunatServicio.SP_CONSULTAR_Y_GUARDAR_MENSAJES(cookieSunat);
+
         return new ResponseEntity<>(
                 RespuestaControlador.exito("Sincronización iniciada manualmente", null),
                 HttpStatus.OK
@@ -49,7 +49,7 @@ public class SunatControlador {
     /**
      * Obtiene todos los mensajes sin paginación (método original) - Solo etiqueta "00"
      */
-    @GetMapping("/obtener-detalle-mensaje")
+   /* @GetMapping("/obtener-detalle-mensaje")
     public ResponseEntity<RespuestaControlador<List<MensajeSunat>>> obtenerDetalleMensajes() {
         List<MensajeSunat> mensajes = mensajeSunatServicio.obtenerTodosMensajes();
         for(MensajeSunat mensaje : mensajes){
@@ -60,14 +60,14 @@ public class SunatControlador {
                 RespuestaControlador.exito(mensajes),
                 HttpStatus.OK
         );
-    }
+    }*/
 
     /**
      * Obtiene todos los mensajes sin paginación (método original) - Solo etiqueta "00"
      */
     @GetMapping("/mensajes")
-    public ResponseEntity<RespuestaControlador<List<MensajeSunat>>> obtenerMensajes() {
-        List<MensajeSunat> mensajes = mensajeSunatServicio.obtenerTodosMensajes();
+    public ResponseEntity<RespuestaControlador<List<MensajeSunat>>> obtenerMensajes(String vc_numero_ruc) {
+        List<MensajeSunat> mensajes = mensajeSunatServicio.obtenerTodosMensajes(vc_numero_ruc);
 
         return new ResponseEntity<>(
                 RespuestaControlador.exito(mensajes),

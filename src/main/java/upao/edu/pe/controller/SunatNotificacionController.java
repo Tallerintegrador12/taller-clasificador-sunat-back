@@ -30,7 +30,7 @@ public class SunatNotificacionController {
      * Endpoint para procesar una notificación de SUNAT por código de mensaje
      * POST /api/sunat/notificaciones/procesar/{codigoMensaje}
      */
-    @PostMapping("/procesar/{codigoMensaje}")
+    /*@PostMapping("/procesar/{codigoMensaje}")
     public ResponseEntity<?> procesarNotificacion(@PathVariable String codigoMensaje) {
         try {
             log.info("Iniciando procesamiento de notificación: {}", codigoMensaje);
@@ -51,13 +51,13 @@ public class SunatNotificacionController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error al obtener/procesar la notificación: " + e.getMessage());
         }
-    }
+    }*/
 
     /**
      * Endpoint para refrecar/actualizar una notificación desde la API de SUNAT
      * PUT /api/sunat/notificaciones/refrescar/{codigoMensaje}
      */
-    @PutMapping("/refrescar/{codigoMensaje}")
+    /*@PutMapping("/refrescar/{codigoMensaje}")
     public ResponseEntity<?> refrescarNotificacion(@PathVariable String codigoMensaje) {
         try {
             log.info("Refrescando notificación desde API: {}", codigoMensaje);
@@ -86,7 +86,7 @@ public class SunatNotificacionController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error al refrescar la notificación: " + e.getMessage());
         }
-    }
+    }*/
 
 
     /**
@@ -126,7 +126,7 @@ public class SunatNotificacionController {
      * Endpoint para obtener o procesar una notificación (busca primero en BD, si no existe la procesa)
      * GET /api/sunat/notificaciones/obtener-o-procesar/{codigoMensaje}
      */
-    @GetMapping("/obtener-o-procesar/{codigoMensaje}")
+    /*@GetMapping("/obtener-o-procesar/{codigoMensaje}")
     public ResponseEntity<?> obtenerOProcesarNotificacion(@PathVariable String codigoMensaje) {
         try {
             log.info("Obteniendo o procesando notificación: {}", codigoMensaje);
@@ -158,5 +158,5 @@ public class SunatNotificacionController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error al obtener el detalle de la notificación: " + e.getMessage());
         }
-    }
+    }*/
 }
