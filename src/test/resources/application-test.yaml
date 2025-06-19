@@ -1,0 +1,33 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password: 
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+  h2:
+    console:
+      enabled: true
+
+# Configuración de logging para tests
+logging:
+  level:
+    org.springframework: WARN
+    org.hibernate: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+sunat:
+  api:
+    url: https://ww1.sunat.gob.pe/ol-ti-itvisornoti/visor
+    cookies: f5_cspm=1234; f5avraaaaaaaaaaaaaaaa_session_=BBLNBPJHPEALCKJHCHKICJMCNMEGFEDBACLNNAODFJJDGIIJNIAJIEFIALCFOMEOBAEDKMMJBGEKNDJOIHHABNLPCICJKBEHPEEMECPKLINBAFMBBBLKFBCFMFKLCPJF; _ga=GA1.3.151806497.1745447274; _ga_6NCEEN6JSV=GS2.1.s1748221598$o7$g0$t1748221600$j0$l0$h0; 20559577627AVINETRI=1; -1351897958=1; ITVISORNOTISESSION=QSGvyQLSZh5LBJ9nZ22TFQ9jy5fzQsGGQJsRY2pHndNG40SyJnFz!1231124268; IAGENDOCSESSION=KfywyQLJpffqS62LPZyZ5gQdZXqQm2nL1mX0n96wWmVPWNL69qnHwD1vvRDZ1mhvby5NQCglcz7jL6bSVRtZpSsMHZwKNCTJvxPpLjTHgJkvTGh4lT5mNjGkXgYy4myXpKk72wNT91vhNf8pPR74YQsDYywnQGNLCG4122yGlvkLKvK0rzP53LG3GHklpD5ytb2PvMmXkRVpJ89gLdl3s1JzYkHjBfBPRKR7d8xGN51Z5rTZGyT2vXJdL7dX1Sns!1303822140!-1837575973; TS011cfddf=014dc399cb0b8b01acef3fbd6e8ae0ee7cb5431fff48db890fe829b6b322cccfe110416a4e73bdfebbbab0878a18786c637eca8d29dcc0c4d6b3bfad14dfbece2b8f1223b0f0a5a363cb01c16b461bb6858fa95f7289406f866fde1cb97fbe0a77cadfeb198b2be901f4ad205025c4080e2dcec5a46722f6eb56cc95c24c7cbf3b42766bb4040dbc2a94f906991f3e324dc67a79937b5ec84a4c35555ae1db6352450907778c74d030287b76d09e4712206b9ad2d582f0ceffb663ccfcff8c7ef53ed81492; TS44788fc0027=08fe7428c8ab2000544cfb423c1f918aa587d385bf0b9feed67d01cf8ac2f379999b6e1b31415b8e08c35e09251130000ce46e8f7a3402f1de9edd3b1b90828d5dec2af93bfb2eab53dba3731019a259ac71636c4bd93c97728603ffb9676dfb
