@@ -1,6 +1,10 @@
 package upao.edu.pe.controller;
 
-
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -21,6 +25,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/sunat")
 @CrossOrigin(originPatterns = "*", allowCredentials = "false")
+@Tag(name = "Sunat Controlador", description = "API para la gestión de mensajes SUNAT")
 public class SunatControlador {
 
     @Autowired
@@ -66,8 +71,17 @@ public class SunatControlador {
     /**
      * Obtiene todos los mensajes sin paginación (método original) - Solo etiqueta "00"
      */
+    @Operation(summary = "Obtener mensajes SUNAT", 
+               description = "Obtiene todos los mensajes SUNAT para un RUC específico")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Mensajes obtenidos exitosamente"),
+        @ApiResponse(responseCode = "400", description = "Parámetros inválidos"),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
     @GetMapping("/mensajes")
-    public ResponseEntity<RespuestaControlador<List<MensajeSunat>>> obtenerMensajes(String vc_numero_ruc) {
+    public ResponseEntity<RespuestaControlador<List<MensajeSunat>>> obtenerMensajes(
+            @Parameter(description = "Número de RUC del contribuyente", required = true, example = "20123456789")
+            @RequestParam("vc_numero_ruc") String vc_numero_ruc) {
         List<MensajeSunat> mensajes = mensajeSunatServicio.obtenerTodosMensajes(vc_numero_ruc);
 
         return new ResponseEntity<>(
