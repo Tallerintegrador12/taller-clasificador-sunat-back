@@ -65,6 +65,8 @@ public class SunatServicio {
             logger.info("RUC: " + usuario.getRuc() + ", Usuario: " + usuario.getUsuario());
         } else {
             logger.info("No se pudo extraer el RUC ni el usuario.");
+            // Si no hay usuario, no se debe llamar a la API ni continuar el proceso
+            return;
         }
 
         for (int i = 1; i <= 30; i++) {
@@ -108,6 +110,29 @@ public class SunatServicio {
 
         for (MensajeSunatDTO dto : mensajesDTO) {
             dto.setVcNumeroRuc(rucUsuario);
+
+            // CLASIFICACIÓN SEGÚN CÓDIGO DE ETIQUETA
+            String codigoEtiqueta = dto.getVcCodigoEtiqueta() != null ? dto.getVcCodigoEtiqueta().trim() : "";
+            String clasificacion;
+            switch (codigoEtiqueta) {
+                case "11": // RESOLUCIONES DE COBRANZAS
+                case "14": // RESOLUCIONES DE FISCALIZACION
+                    clasificacion = "MUY IMPORTANTE";
+                    break;
+                case "13": // RESOLUCIONES NO CONTENCIOSAS
+                case "15": // RESOLUCIONES ANTERIORES
+                    clasificacion = "IMPORTANTE";
+                    break;
+                case "00": // NO ETIQUETADOS
+                case "10": // VALORES
+                case "16": // AVISOS
+                    clasificacion = "RECURRENTE";
+                    break;
+                default:
+                    clasificacion = "SIN CLASIFICACION";
+            }
+            dto.setClasificacion(clasificacion);
+
             // Verificar si el mensaje ya existe en la base de datos
             if (!mensajeSunatRepositorio.existsByNuCodigoMensaje(dto.getNuCodigoMensaje())) {
                 MensajeSunat mensajeSunat = mensajeSunatMapper.mapearAEntidad(dto);
@@ -117,6 +142,53 @@ public class SunatServicio {
         }
 
         return nuevosMensajes;
+    }
+
+    /**
+     * Actualiza las clasificaciones de los mensajes existentes
+     */
+    public void actualizarClasificacionesExistentes() {
+        logger.info("Iniciando actualización de clasificaciones existentes");
+        
+        // Obtener todos los mensajes existentes
+        List<MensajeSunat> mensajes = mensajeSunatRepositorio.findAll();
+        List<MensajeSunat> mensajesActualizados = new ArrayList<>();
+        
+        for (MensajeSunat mensaje : mensajes) {
+            String codigoEtiqueta = mensaje.getVcCodigoEtiqueta() != null ? mensaje.getVcCodigoEtiqueta().trim() : "";
+            String nuevaClasificacion;
+            
+            switch (codigoEtiqueta) {
+                case "11": // RESOLUCIONES DE COBRANZAS
+                case "14": // RESOLUCIONES DE FISCALIZACION
+                    nuevaClasificacion = "MUY IMPORTANTE";
+                    break;
+                case "13": // RESOLUCIONES NO CONTENCIOSAS
+                case "15": // RESOLUCIONES ANTERIORES
+                    nuevaClasificacion = "IMPORTANTE";
+                    break;
+                case "00": // NO ETIQUETADOS
+                case "10": // VALORES
+                case "16": // AVISOS
+                    nuevaClasificacion = "RECURRENTE";
+                    break;
+                default:
+                    nuevaClasificacion = "SIN CLASIFICACION";
+            }
+            
+            // Solo actualizar si la clasificación ha cambiado
+            if (!nuevaClasificacion.equals(mensaje.getClasificacion())) {
+                mensaje.setClasificacion(nuevaClasificacion);
+                mensajesActualizados.add(mensaje);
+            }
+        }
+        
+        if (!mensajesActualizados.isEmpty()) {
+            mensajeSunatRepositorio.saveAll(mensajesActualizados);
+            logger.info("Se actualizaron {} mensajes con nuevas clasificaciones", mensajesActualizados.size());
+        } else {
+            logger.info("No se encontraron mensajes que requieran actualización de clasificación");
+        }
     }
 
     public UsuarioExtraido extraerUsuario(String cookies) {

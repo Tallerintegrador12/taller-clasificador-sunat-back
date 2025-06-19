@@ -85,4 +85,8 @@ public class MensajeSunat {
     @Column(name = "NU_ARCHIVADO")
     @Builder.Default
     private Integer nuArchivado = 0; // 1: archivado, 0: no archivado
+
+    // Nueva columna para la clasificación
+    @Column(name = "CLASIFICACION", length = 30)
+    private String clasificacion;
 }

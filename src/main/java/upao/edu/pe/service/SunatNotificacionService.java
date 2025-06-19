@@ -188,7 +188,7 @@ public class SunatNotificacionService {
      * @param jsonString La cadena a validar
      * @return true si es JSON válido, false en caso contrario
      */
-    private boolean esJsonValido(String jsonString) {
+    boolean esJsonValido(String jsonString) {
         if (jsonString == null || jsonString.trim().isEmpty()) {
             return false;
         }
@@ -221,21 +221,6 @@ public class SunatNotificacionService {
 
         // Construir el JSON del mensaje
         if (detalle.getMsjMensaje()!= null) {
-            /*StringBuilder msjMensaje = new StringBuilder();
-            msjMensaje.append("{");
-            msjMensaje.append("\"sistema\":\"").append(detalle.getSistema()).append("\",");
-            msjMensaje.append("\"id_archivo\":\"").append(detalle.getIdArchivo()).append("\",");
-            msjMensaje.append("\"dependencia\":\"").append(detalle.getDependencia()).append("\",");
-            msjMensaje.append("\"num_doc\":\"").append(detalle.getNumDoc()).append("\",");
-            msjMensaje.append("\"cod_mensaje\":\"").append(detalle.getCodMensaje()).append("\",");
-            msjMensaje.append("\"des_tip_doc\":\"").append(codificarHtml(detalle.getDesTipDoc())).append("\",");
-            msjMensaje.append("\"id_anexo\":\"").append(detalle.getIdAnexo()).append("\",");
-            msjMensaje.append("\"razon_social\":\"").append(detalle.getRazonSocial()).append("\",");
-            msjMensaje.append("\"nombre\":\"").append(detalle.getNombre()).append("\",");
-            msjMensaje.append("\"numruc\":\"").append(detalle.getNumruc()).append("\"");
-            msjMensaje.append("}");
-
-            response.setMsjMensaje(msjMensaje.toString());*/
             response.setMsjMensaje(detalle.getMsjMensaje());
         }
 
@@ -244,31 +229,32 @@ public class SunatNotificacionService {
 
         // Convertir attachments
         if (detalle.getListAttach() != null) {
-            List<AttachmentResponseDto> attachments = new ArrayList<>();
-
-            for (AttachmentDetalle attach : detalle.getListAttach()) {
-                AttachmentResponseDto attachDto = new AttachmentResponseDto();
-                attachDto.setCodMensaje(attach.getCodMensaje());
-                attachDto.setCodArchivo(attach.getCodArchivo());
-                attachDto.setNomArchivo(attach.getNomArchivo());
-                attachDto.setNomAdjunto(attach.getNomAdjunto());
-                attachDto.setCntTamarch(attach.getCntTamarch());
-                attachDto.setNumId(attach.getNumId());
-                attachDto.setIndMensaje(attach.getIndMensaje());
-                attachDto.setNumEcm(attach.getNumEcm());
-                attachDto.setTamanoArchivoFormat(attach.getTamanoArchivoFormat());
-                attachDto.setUrl(attach.getUrl());
-
-                attachments.add(attachDto);
+            if (detalle.getListAttach().isEmpty()) {
+                response.setListAttach(null);
+            } else {
+                List<AttachmentResponseDto> attachments = new ArrayList<>();
+                for (AttachmentDetalle attach : detalle.getListAttach()) {
+                    AttachmentResponseDto attachDto = new AttachmentResponseDto();
+                    attachDto.setCodMensaje(attach.getCodMensaje());
+                    attachDto.setCodArchivo(attach.getCodArchivo());
+                    attachDto.setNomArchivo(attach.getNomArchivo());
+                    attachDto.setNomAdjunto(attach.getNomAdjunto());
+                    attachDto.setCntTamarch(attach.getCntTamarch());
+                    attachDto.setNumId(attach.getNumId());
+                    attachDto.setIndMensaje(attach.getIndMensaje());
+                    attachDto.setNumEcm(attach.getNumEcm());
+                    attachDto.setTamanoArchivoFormat(attach.getTamanoArchivoFormat());
+                    attachDto.setUrl(attach.getUrl());
+                    attachments.add(attachDto);
+                }
+                response.setListAttach(attachments);
             }
-
-            response.setListAttach(attachments);
         }
 
         return response;
     }
 
-    private String decodificarHtml(String texto) {
+    public String decodificarHtml(String texto) {
         if (texto == null) return null;
         return texto.replace("%26%23243;", "ó")
                 .replace("&amp;", "&")
@@ -278,7 +264,7 @@ public class SunatNotificacionService {
                 .replace("&#39;", "'");
     }
 
-    private String codificarHtml(String texto) {
+    public String codificarHtml(String texto) {
         if (texto == null) return null;
         return texto.replace("ó", "%26%23243;")
                 .replace("&", "&amp;")

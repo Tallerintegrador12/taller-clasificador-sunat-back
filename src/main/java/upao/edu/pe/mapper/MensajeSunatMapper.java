@@ -53,6 +53,7 @@ public class MensajeSunatMapper {
         entidad.setNuMensaje(dto.getNuMensaje());
         entidad.setVcCodigoCarpeta(dto.getVcCodigoCarpeta());
         entidad.setVcNumeroRuc(dto.getVcNumeroRuc());
+        entidad.setClasificacion(dto.getClasificacion());
 
         return entidad;
     }
@@ -62,7 +63,7 @@ public class MensajeSunatMapper {
      * @param fechaStr Fecha en formato string
      * @return LocalDateTime o null si hay error
      */
-    private LocalDateTime parsearFechaVigencia(String fechaStr) {
+    LocalDateTime parsearFechaVigencia(String fechaStr) {
         if (fechaStr == null || fechaStr.isEmpty()) {
             return null;
         }
@@ -74,5 +75,34 @@ public class MensajeSunatMapper {
             logger.error("Error al parsear la fecha de vigencia: {}", e.getMessage());
             return null;
         }
+    }
+
+    public MensajeSunatDTO mapearADTO(MensajeSunat entidad) {
+        if (entidad == null) {
+            return null;
+        }
+        MensajeSunatDTO dto = new MensajeSunatDTO();
+        dto.setNuCodigoMensaje(entidad.getNuCodigoMensaje());
+        dto.setNuPagina(entidad.getNuPagina());
+        dto.setNuEstado(entidad.getNuEstado());
+        dto.setNuDestacado(entidad.getNuDestacado());
+        dto.setNuUrgente(entidad.getNuUrgente());
+        dto.setDtFechaVigencia(entidad.getDtFechaVigencia() != null ? entidad.getDtFechaVigencia().toString() : null);
+        dto.setNuTipoMensaje(entidad.getNuTipoMensaje());
+        dto.setVcAsunto(entidad.getVcAsunto());
+        dto.setVcFechaEnvio(entidad.getVcFechaEnvio());
+        dto.setVcFechaPublica(entidad.getVcFechaPublica());
+        dto.setVcUsuarioEmisor(entidad.getVcUsuarioEmisor());
+        dto.setNuIndicadorTexto(entidad.getNuIndicadorTexto());
+        dto.setNuTipoGenerador(entidad.getNuTipoGenerador());
+        dto.setVcCodigoDependencia(entidad.getVcCodigoDependencia());
+        dto.setNuAviso(entidad.getNuAviso());
+        dto.setNuCantidadArchivos(entidad.getNuCantidadArchivos());
+        dto.setVcCodigoEtiqueta(entidad.getVcCodigoEtiqueta());
+        dto.setNuMensaje(entidad.getNuMensaje());
+        dto.setVcCodigoCarpeta(entidad.getVcCodigoCarpeta());
+        dto.setVcNumeroRuc(entidad.getVcNumeroRuc());
+        dto.setClasificacion(entidad.getClasificacion());
+        return dto;
     }
 }

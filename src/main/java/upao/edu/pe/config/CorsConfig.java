@@ -14,10 +14,10 @@ public class CorsConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/api/**") // ajusta según tu ruta base
-                        .allowedOrigins("http://localhost:4200", "https://clasificador-sunat.netlify.app")
+                        .allowedOriginPatterns("*") // Usar allowedOriginPatterns en lugar de allowedOrigins
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
-                        .allowCredentials(true);
+                        .allowCredentials(false); // Cambiar a false para permitir cualquier origen
             }
         };
     }

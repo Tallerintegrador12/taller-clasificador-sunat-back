@@ -20,6 +20,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/sunat")
+@CrossOrigin(originPatterns = "*", allowCredentials = "false")
 public class SunatControlador {
 
     @Autowired
@@ -259,5 +260,29 @@ public class SunatControlador {
                 RespuestaControlador.exito("Mensaje marcado como " + estadoTexto, mensaje),
                 HttpStatus.OK
         );
+    }
+
+    /**
+     * Actualiza las clasificaciones de todos los mensajes existentes
+     */
+    @PostMapping("/actualizar-clasificaciones")
+    public ResponseEntity<RespuestaControlador<String>> actualizarClasificaciones() {
+        try {
+            sunatServicio.actualizarClasificacionesExistentes();
+            return new ResponseEntity<>(
+                    RespuestaControlador.exito("Clasificaciones actualizadas correctamente", null),
+                    HttpStatus.OK
+            );
+        } catch (Exception e) {
+            RespuestaControlador<String> respuestaError = new RespuestaControlador<>();
+            respuestaError.setVcMensaje("Error al actualizar clasificaciones: " + e.getMessage());
+            respuestaError.setNuCodigo(500);
+            respuestaError.setDatos(null);
+            
+            return new ResponseEntity<>(
+                    respuestaError,
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
     }
 }

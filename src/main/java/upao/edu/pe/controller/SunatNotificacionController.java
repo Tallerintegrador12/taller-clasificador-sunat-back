@@ -30,8 +30,8 @@ public class SunatNotificacionController {
      * Endpoint para procesar una notificación de SUNAT por código de mensaje
      * POST /api/sunat/notificaciones/procesar/{codigoMensaje}
      */
-    /*@PostMapping("/procesar/{codigoMensaje}")
-    public ResponseEntity<?> procesarNotificacion(@PathVariable String codigoMensaje) {
+    @PostMapping("/procesar/{codigoMensaje}")
+    public ResponseEntity<?> procesarNotificacion(@PathVariable String codigoMensaje, @RequestParam String cookie) {
         try {
             log.info("Iniciando procesamiento de notificación: {}", codigoMensaje);
 
@@ -40,7 +40,7 @@ public class SunatNotificacionController {
                         .body("El código de mensaje es requerido");
             }
 
-            DetalleNotificacion detalle = sunatNotificacionService.procesarYGuardarNotificacion(codigoMensaje);
+            DetalleNotificacion detalle = sunatNotificacionService.procesarYGuardarNotificacion(codigoMensaje, cookie);
             NotificacionResponseDto response = sunatNotificacionService.convertirAFormatoSolicitado(detalle);
 
             log.info("Notificación {} procesada exitosamente", codigoMensaje);
@@ -51,14 +51,14 @@ public class SunatNotificacionController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error al obtener/procesar la notificación: " + e.getMessage());
         }
-    }*/
+    }
 
     /**
      * Endpoint para refrecar/actualizar una notificación desde la API de SUNAT
      * PUT /api/sunat/notificaciones/refrescar/{codigoMensaje}
      */
-    /*@PutMapping("/refrescar/{codigoMensaje}")
-    public ResponseEntity<?> refrescarNotificacion(@PathVariable String codigoMensaje) {
+    @PutMapping("/refrescar/{codigoMensaje}")
+    public ResponseEntity<?> refrescarNotificacion(@PathVariable String codigoMensaje, @RequestParam String cookie) {
         try {
             log.info("Refrescando notificación desde API: {}", codigoMensaje);
 
@@ -67,15 +67,13 @@ public class SunatNotificacionController {
                         .body("El código de mensaje es requerido");
             }
 
-            // Eliminar registro existente si existe
             Optional<DetalleNotificacion> existente = sunatNotificacionService.buscarDetallePorCodigo(codigoMensaje);
             if (existente.isPresent()) {
                 log.info("Eliminando registro existente para actualizar: {}", codigoMensaje);
                 // Aquí podrías agregar lógica para eliminar el registro existente si lo deseas
             }
 
-            // Procesar nuevamente desde la API
-            DetalleNotificacion detalle = sunatNotificacionService.procesarYGuardarNotificacion(codigoMensaje);
+            DetalleNotificacion detalle = sunatNotificacionService.procesarYGuardarNotificacion(codigoMensaje, cookie);
             NotificacionResponseDto response = sunatNotificacionService.convertirAFormatoSolicitado(detalle);
 
             log.info("Notificación {} refrescada exitosamente", codigoMensaje);
@@ -86,7 +84,7 @@ public class SunatNotificacionController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error al refrescar la notificación: " + e.getMessage());
         }
-    }*/
+    }
 
 
     /**
@@ -126,8 +124,8 @@ public class SunatNotificacionController {
      * Endpoint para obtener o procesar una notificación (busca primero en BD, si no existe la procesa)
      * GET /api/sunat/notificaciones/obtener-o-procesar/{codigoMensaje}
      */
-    /*@GetMapping("/obtener-o-procesar/{codigoMensaje}")
-    public ResponseEntity<?> obtenerOProcesarNotificacion(@PathVariable String codigoMensaje) {
+    @GetMapping("/obtener-o-procesar/{codigoMensaje}")
+    public ResponseEntity<?> obtenerOProcesarNotificacion(@PathVariable String codigoMensaje, @RequestParam String cookie) {
         try {
             log.info("Obteniendo o procesando notificación: {}", codigoMensaje);
 
@@ -136,7 +134,6 @@ public class SunatNotificacionController {
                         .body("El código de mensaje es requerido");
             }
 
-            // Primero intentar buscar en la base de datos
             Optional<DetalleNotificacion> detalleOpt = sunatNotificacionService.buscarDetallePorCodigo(codigoMensaje);
 
             DetalleNotificacion detalle;
@@ -145,7 +142,7 @@ public class SunatNotificacionController {
                 detalle = detalleOpt.get();
             } else {
                 log.info("Notificación {} no encontrada, procesando desde API", codigoMensaje);
-                detalle = sunatNotificacionService.procesarYGuardarNotificacion(codigoMensaje);
+                detalle = sunatNotificacionService.procesarYGuardarNotificacion(codigoMensaje, cookie);
             }
 
             NotificacionResponseDto response = sunatNotificacionService.convertirAFormatoSolicitado(detalle);
@@ -158,5 +155,5 @@ public class SunatNotificacionController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error al obtener el detalle de la notificación: " + e.getMessage());
         }
-    }*/
+    }
 }

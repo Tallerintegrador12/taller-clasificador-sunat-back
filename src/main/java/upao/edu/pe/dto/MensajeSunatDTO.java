@@ -72,6 +72,9 @@ public class MensajeSunatDTO {
     @JsonProperty("numRuc")
     private String vcNumeroRuc;
 
+    @JsonProperty("clasificacion")
+    private String clasificacion;
+
     public Integer getNuPagina() {
         return nuPagina;
     }
@@ -224,13 +227,19 @@ public class MensajeSunatDTO {
         this.vcNumeroRuc = vcNumeroRuc;
     }
 
-        // Método getter explícito
     public Long getNuCodigoMensaje() {
         return nuCodigoMensaje;
     }
 
-    // Método setter explícito
     public void setNuCodigoMensaje(Long nuCodigoMensaje) {
         this.nuCodigoMensaje = nuCodigoMensaje;
+    }
+
+    public String getClasificacion() {
+        return clasificacion;
+    }
+
+    public void setClasificacion(String clasificacion) {
+        this.clasificacion = clasificacion;
     }
 }

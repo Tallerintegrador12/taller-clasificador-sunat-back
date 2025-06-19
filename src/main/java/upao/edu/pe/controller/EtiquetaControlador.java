@@ -15,6 +15,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/etiquetas")
+@CrossOrigin(originPatterns = "*", allowCredentials = "false")
 public class EtiquetaControlador {
 
     @Autowired
