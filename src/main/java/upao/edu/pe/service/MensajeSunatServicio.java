@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import upao.edu.pe.model.MensajeSunat;
 import upao.edu.pe.repository.MensajeSunatRepositorio;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,12 @@ public class MensajeSunatServicio {
 
     @Autowired
     private MensajeSunatRepositorio mensajeSunatRepositorio;
+
+    @Autowired
+    private GeminiAIService geminiAIService;
+
+    @Autowired
+    private NotificationService notificationService;
 
     private static final Map<String, String> ETIQUETAS = new HashMap<>();
 
@@ -41,6 +48,10 @@ public class MensajeSunatServicio {
      * Obtiene todos los mensajes ordenados por fecha de publicación con etiqueta "00"
      */
     public List<MensajeSunat> obtenerTodosMensajes(String vc_numero_ruc) {
+        // Si el RUC está vacío, devolver todos los mensajes (para debugging)
+        if (vc_numero_ruc == null || vc_numero_ruc.trim().isEmpty()) {
+            return mensajeSunatRepositorio.findAll();
+        }
         return mensajeSunatRepositorio.findMensajesOrdenadosPorFecha(vc_numero_ruc);
     }
 
@@ -177,5 +188,170 @@ public class MensajeSunatServicio {
 
         mensaje.setNuArchivado(archivado);
         return mensajeSunatRepositorio.save(mensaje);
+    }
+
+    /**
+     * Obtiene un mensaje por su ID
+     * @param id ID del mensaje
+     * @return Mensaje encontrado o null si no existe
+     */
+    public MensajeSunat obtenerMensajePorId(Long id) {
+        return mensajeSunatRepositorio.findById(id).orElse(null);
+    }
+
+    /**
+     * Procesa nuevos correos con análisis de Gemini AI
+     * @param nuevosCorreos Lista de nuevos correos a procesar
+     * @return Lista de correos procesados con clasificación automática
+     */
+    public List<MensajeSunat> procesarNuevosCorreosConIA(List<MensajeSunat> nuevosCorreos) {
+        if (nuevosCorreos == null || nuevosCorreos.isEmpty()) {
+            return nuevosCorreos;
+        }
+
+        log.info("Procesando {} nuevos correos con Gemini AI", nuevosCorreos.size());
+        
+        List<NotificationService.EmailAnalysisInfo> correosProcesados = new ArrayList<>();
+        List<MensajeSunat> correosActualizados = new ArrayList<>();
+
+        for (MensajeSunat correo : nuevosCorreos) {
+            try {
+                // Analizar correo con Gemini AI
+                GeminiAIService.EmailAnalysisResult analysis = geminiAIService.analyzeEmail(correo);
+                
+                // Actualizar correo con la clasificación
+                correo.setVcCodigoEtiqueta(analysis.getEtiquetaCodigo());
+                
+                // Determinar clasificación (Muy Importante, Importante, Recurrente)
+                asignarClasificacion(correo, analysis.getClasificacion());
+                
+                // Guardar correo actualizado
+                MensajeSunat correoGuardado = mensajeSunatRepositorio.save(correo);
+                correosActualizados.add(correoGuardado);
+                
+                // Crear info para notificación
+                NotificationService.EmailAnalysisInfo emailInfo = 
+                    NotificationService.EmailAnalysisInfo.fromMensajeAndAnalysis(correo, analysis);
+                correosProcesados.add(emailInfo);
+                
+                log.info("Correo procesado: {} -> {} ({})", 
+                    truncateSubject(correo.getVcAsunto(), 30), 
+                    analysis.getClasificacion(),
+                    analysis.getEtiquetaNombre());
+                
+            } catch (Exception e) {
+                log.error("Error procesando correo {}: {}", correo.getNuCodigoMensaje(), e.getMessage());
+                
+                // Asignar clasificación por defecto en caso de error
+                correo.setVcCodigoEtiqueta("00");
+                MensajeSunat correoGuardado = mensajeSunatRepositorio.save(correo);
+                correosActualizados.add(correoGuardado);
+            }
+        }
+
+        // Enviar notificaciones
+        if (!correosProcesados.isEmpty()) {
+            notificationService.notifyNewEmails(correosProcesados);
+        }
+
+        return correosActualizados;
+    }
+
+    /**
+     * Procesa un solo correo nuevo con análisis de IA
+     * @param correo Correo a procesar
+     * @return Correo procesado
+     */
+    public MensajeSunat procesarCorreoIndividualConIA(MensajeSunat correo) {
+        try {
+            // Analizar correo con Gemini AI
+            GeminiAIService.EmailAnalysisResult analysis = geminiAIService.analyzeEmail(correo);
+            
+            // Actualizar correo con la clasificación
+            correo.setVcCodigoEtiqueta(analysis.getEtiquetaCodigo());
+            
+            // Determinar clasificación
+            asignarClasificacion(correo, analysis.getClasificacion());
+            
+            // Guardar correo actualizado
+            MensajeSunat correoGuardado = mensajeSunatRepositorio.save(correo);
+            
+            // Crear info para notificación
+            NotificationService.EmailAnalysisInfo emailInfo = 
+                NotificationService.EmailAnalysisInfo.fromMensajeAndAnalysis(correo, analysis);
+            
+            // Notificar correo individual
+            notificationService.notifySingleEmail(emailInfo);
+            
+            log.info("Correo individual procesado: {} -> {} ({})", 
+                truncateSubject(correo.getVcAsunto(), 30), 
+                analysis.getClasificacion(),
+                analysis.getEtiquetaNombre());
+            
+            return correoGuardado;
+            
+        } catch (Exception e) {
+            log.error("Error procesando correo individual {}: {}", correo.getNuCodigoMensaje(), e.getMessage());
+            
+            // Asignar clasificación por defecto
+            correo.setVcCodigoEtiqueta("00");
+            return mensajeSunatRepositorio.save(correo);
+        }
+    }
+
+    /**
+     * Asigna la clasificación al correo basada en el análisis de IA
+     * SOLO actualiza el campo clasificacion - NO toca nu_urgente ni nu_destacado
+     * porque esos son controles manuales del usuario:
+     * - nu_urgente: Banderita manual en SUNAT 🚩  
+     * - nu_destacado: Estrella manual en frontend ⭐
+     */
+    private void asignarClasificacion(MensajeSunat correo, String clasificacion) {
+        // Solo asignar la clasificación como texto
+        correo.setClasificacion(clasificacion);
+        
+        // NO modificar nu_urgente ni nu_destacado - son controles del usuario
+    }
+
+    /**
+     * Trunca el asunto del correo para logs
+     */
+    private String truncateSubject(String subject, int maxLength) {
+        if (subject == null) {
+            return "Sin asunto";
+        }
+        if (subject.length() <= maxLength) {
+            return subject;
+        }
+        return subject.substring(0, maxLength - 3) + "...";
+    }
+
+    /**
+     * Obtiene estadísticas de correos procesados
+     */
+    public Map<String, Object> obtenerEstadisticasCorreos() {
+        Map<String, Object> stats = new HashMap<>();
+        
+        // Total de correos
+        long totalCorreos = mensajeSunatRepositorio.count();
+        stats.put("totalCorreos", totalCorreos);
+        
+        // Correos por etiqueta
+        Map<String, Long> correosPorEtiqueta = new HashMap<>();
+        for (String codigo : ETIQUETAS.keySet()) {
+            long count = mensajeSunatRepositorio.countByVcCodigoEtiqueta(codigo);
+            correosPorEtiqueta.put(ETIQUETAS.get(codigo), count);
+        }
+        stats.put("correosPorEtiqueta", correosPorEtiqueta);
+        
+        // Correos destacados
+        long correosDestacados = mensajeSunatRepositorio.countByNuDestacado(1);
+        stats.put("correosDestacados", correosDestacados);
+        
+        // Correos urgentes
+        long correosUrgentes = mensajeSunatRepositorio.countByNuUrgente(1);
+        stats.put("correosUrgentes", correosUrgentes);
+        
+        return stats;
     }
 }

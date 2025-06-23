@@ -49,4 +49,9 @@ public interface MensajeSunatRepositorio extends JpaRepository<MensajeSunat, Lon
     @Modifying
     @Query("UPDATE MensajeSunat m SET m.vcCodigoEtiqueta = '00' WHERE m.vcCodigoEtiqueta = :codigoEtiqueta")
     int actualizarMensajesANoEtiquetados(@Param("codigoEtiqueta") String codigoEtiqueta);
+
+    // Métodos para obtener estadísticas
+    long countByVcCodigoEtiqueta(String vcCodigoEtiqueta);
+    long countByNuDestacado(Integer nuDestacado);
+    long countByNuUrgente(Integer nuUrgente);
 }

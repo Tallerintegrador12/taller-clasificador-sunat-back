@@ -17,6 +17,7 @@ import upao.edu.pe.dto.NotificacionResponseDto;
 import upao.edu.pe.dto.response.SunatApiResponse;
 import upao.edu.pe.model.AttachmentDetalle;
 import upao.edu.pe.model.DetalleNotificacion;
+import upao.edu.pe.model.MensajeSunat;
 import upao.edu.pe.repository.AttachmentDetalleRepository;
 import upao.edu.pe.repository.DetalleNotificacionRepository;
 
@@ -30,6 +31,7 @@ public class SunatNotificacionService {
 
     private final DetalleNotificacionRepository detalleNotificacionRepository;
     private final AttachmentDetalleRepository attachmentDetalleRepository;
+    private final MensajeSunatServicio mensajeSunatServicio;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
@@ -39,9 +41,14 @@ public class SunatNotificacionService {
     /*@Value("${sunat.api.cookies}")
     private String sunatCookie;
 */
-    public SunatNotificacionService(DetalleNotificacionRepository detalleNotificacionRepository, AttachmentDetalleRepository attachmentDetalleRepository, RestTemplate restTemplate, ObjectMapper objectMapper) {
+    public SunatNotificacionService(DetalleNotificacionRepository detalleNotificacionRepository, 
+                                   AttachmentDetalleRepository attachmentDetalleRepository, 
+                                   MensajeSunatServicio mensajeSunatServicio,
+                                   RestTemplate restTemplate, 
+                                   ObjectMapper objectMapper) {
         this.detalleNotificacionRepository = detalleNotificacionRepository;
         this.attachmentDetalleRepository = attachmentDetalleRepository;
+        this.mensajeSunatServicio = mensajeSunatServicio;
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
     }
@@ -175,6 +182,27 @@ public class SunatNotificacionService {
             }
 
             log.info("Notificación {} procesada y guardada exitosamente", codigoMensaje);
+            
+            // 🤖 INTEGRACIÓN CON GEMINI AI - Procesar correo nuevo
+            try {
+                log.info("🤖 Iniciando procesamiento con Gemini AI para correo: {}", codigoMensaje);
+                
+                // Crear MensajeSunat desde DetalleNotificacion para Gemini AI
+                MensajeSunat mensajeSunat = crearMensajeSunatDesdeDetalle(detalleNotificacion, apiResponse);
+                
+                // Procesar con Gemini AI
+                MensajeSunat mensajeProcesado = mensajeSunatServicio.procesarCorreoIndividualConIA(mensajeSunat);
+                
+                log.info("✅ Correo {} procesado con Gemini AI - Clasificación: {} - Etiqueta: {}", 
+                    codigoMensaje, 
+                    mensajeProcesado.getClasificacion(),
+                    mensajeProcesado.getVcCodigoEtiqueta());
+                
+            } catch (Exception e) {
+                log.error("❌ Error al procesar correo {} con Gemini AI: {}", codigoMensaje, e.getMessage());
+                // No fallar la sincronización completa por errores de Gemini
+            }
+            
             return detalleNotificacion;
 
         } catch (Exception e) {
@@ -272,5 +300,74 @@ public class SunatNotificacionService {
                 .replace(">", "&gt;")
                 .replace("\"", "&quot;")
                 .replace("'", "&#39;");
+    }
+
+    /**
+     * Crea un MensajeSunat desde un DetalleNotificacion para procesamiento con Gemini AI
+     */
+    private MensajeSunat crearMensajeSunatDesdeDetalle(DetalleNotificacion detalle, SunatApiResponse apiResponse) {
+        MensajeSunat mensaje = new MensajeSunat();
+        
+        // Mapear campos básicos
+        mensaje.setNuCodigoMensaje(Long.parseLong(detalle.getCodMensaje()));
+        mensaje.setVcAsunto(detalle.getCodMensaje()); // Usar código como asunto temporal
+        mensaje.setVcUsuarioEmisor("SUNAT");
+        
+        // ARREGLO: Asegurar que el RUC se asigne correctamente
+        String rucFinal = null;
+        if (detalle.getNumruc() != null && !detalle.getNumruc().trim().isEmpty()) {
+            rucFinal = detalle.getNumruc().trim();
+        } else if (apiResponse.getCodUsuario() != null && !apiResponse.getCodUsuario().trim().isEmpty()) {
+            rucFinal = apiResponse.getCodUsuario().trim();
+        }
+        
+        mensaje.setVcNumeroRuc(rucFinal);
+        mensaje.setVcCodigoEtiqueta("00"); // Inicialmente sin etiqueta
+        mensaje.setNuLeido(0);
+        mensaje.setNuArchivado(0);
+        
+        // Mapear fechas si están disponibles
+        if (apiResponse.getFecEnvio() != null) {
+            mensaje.setVcFechaEnvio(apiResponse.getFecEnvio());
+        }
+        
+        // Si hay información adicional, construir un asunto más descriptivo
+        StringBuilder asuntoBuilder = new StringBuilder();
+        
+        if (detalle.getDesTipDoc() != null && !detalle.getDesTipDoc().isEmpty()) {
+            asuntoBuilder.append(detalle.getDesTipDoc());
+        } else if (detalle.getRazonSocial() != null) {
+            asuntoBuilder.append("Notificación para ").append(detalle.getRazonSocial());
+        } else {
+            asuntoBuilder.append("Notificación SUNAT - Código: ").append(detalle.getCodMensaje());
+        }
+        
+        // Si hay información del mensaje, agregarla
+        if (detalle.getMsjMensaje() != null && !detalle.getMsjMensaje().isEmpty()) {
+            // Extraer información relevante del mensaje
+            String mensajeTexto = detalle.getMsjMensaje();
+            
+            // Buscar patrones comunes en los mensajes
+            if (mensajeTexto.contains("multa")) {
+                asuntoBuilder.append(" - Multa Tributaria");
+            } else if (mensajeTexto.contains("cobranza")) {
+                asuntoBuilder.append(" - Resolución de Cobranza");
+            } else if (mensajeTexto.contains("fiscalización")) {
+                asuntoBuilder.append(" - Fiscalización");
+            } else if (mensajeTexto.contains("valores")) {
+                asuntoBuilder.append(" - Valores");
+            } else if (mensajeTexto.contains("registros")) {
+                asuntoBuilder.append(" - Registros Electrónicos");
+            }
+        }
+        
+        mensaje.setVcAsunto(asuntoBuilder.toString());
+        
+        log.info("📧 Creado MensajeSunat para Gemini AI: ID={}, Asunto='{}', RUC={}", 
+            mensaje.getNuCodigoMensaje(), 
+            mensaje.getVcAsunto(), 
+            mensaje.getVcNumeroRuc());
+        
+        return mensaje;
     }
 }

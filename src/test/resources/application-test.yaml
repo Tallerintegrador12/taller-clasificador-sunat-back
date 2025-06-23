@@ -18,6 +18,9 @@ spring:
   h2:
     console:
       enabled: true
+  sql:
+    init:
+      mode: never
 
 # Configuración de logging para tests
 logging:

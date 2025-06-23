@@ -1,6 +1,6 @@
 
 server:
-  port: 8085
+  port: 8080
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/sunat_db
