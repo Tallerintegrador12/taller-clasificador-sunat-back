@@ -357,25 +357,30 @@ public class SunatControlador {
             resultado.put("correosNuevos", correosNuevos.size());
             resultado.put("correosProcesados", correosProcesados.size());
             
-            // Estadísticas por clasificación
+            // Estadísticas por clasificación (basadas en la clasificación de IA, no en flags manuales)
             long muyImportantes = correosProcesados.stream()
-                .filter(c -> c.getNuUrgente() != null && c.getNuUrgente() == 1)
+                .filter(c -> "MUY IMPORTANTE".equals(c.getClasificacion()))
                 .count();
             long importantes = correosProcesados.stream()
-                .filter(c -> c.getNuDestacado() != null && c.getNuDestacado() == 1 && 
-                           (c.getNuUrgente() == null || c.getNuUrgente() == 0))
+                .filter(c -> "IMPORTANTE".equals(c.getClasificacion()))
                 .count();
-            long recurrentes = correosProcesados.size() - muyImportantes - importantes;
+            long recurrentes = correosProcesados.stream()
+                .filter(c -> "RECURRENTE".equals(c.getClasificacion()))
+                .count();
+            long informativos = correosProcesados.stream()
+                .filter(c -> "INFORMATIVO".equals(c.getClasificacion()))
+                .count();
             
             resultado.put("clasificacion", Map.of(
                 "muyImportantes", muyImportantes,
                 "importantes", importantes,
-                "recurrentes", recurrentes
+                "recurrentes", recurrentes,
+                "informativos", informativos
             ));
 
             String mensaje = String.format(
-                "Se procesaron %d correos nuevos: %d muy importantes, %d importantes, %d recurrentes. ¡Revisa las notificaciones en los logs!",
-                correosProcesados.size(), muyImportantes, importantes, recurrentes
+                "Se procesaron %d correos nuevos: %d muy importantes, %d importantes, %d informativos, %d recurrentes. ¡Revisa las notificaciones en los logs!",
+                correosProcesados.size(), muyImportantes, importantes, informativos, recurrentes
             );
 
             return new ResponseEntity<>(

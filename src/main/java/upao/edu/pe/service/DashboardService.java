@@ -58,7 +58,7 @@ public class DashboardService {
             // Construir respuesta
             Map<String, Object> resumenGeneral = new HashMap<>();
             resumenGeneral.put("totalCorreos", totalCorreos);
-            resumenGeneral.put("correosNuevos", contarCorreosNuevos(mensajes, dias));
+            resumenGeneral.put("correosNuevos", contarCorreosHoy(mensajes));
             resumenGeneral.put("muyImportantes", clasificaciones.getOrDefault("MUY IMPORTANTE", 0L));
             resumenGeneral.put("importantes", clasificaciones.getOrDefault("IMPORTANTE", 0L));
             resumenGeneral.put("recurrentes", clasificaciones.getOrDefault("RECURRENTE", 0L));
@@ -344,17 +344,17 @@ public class DashboardService {
         
         try {
             List<MensajeSunat> mensajes = mensajeSunatServicio.obtenerTodosMensajes(ruc);
-            
-            // 🤖 ANÁLISIS REAL CON GEMINI AI
+              // 🤖 ANÁLISIS REAL CON GEMINI AI
             Map<String, Object> analisisGemini = analizarConGeminiAI(mensajes, ruc);
               if (analisisGemini != null && !analisisGemini.isEmpty()) {
                 // Usar análisis real de Gemini AI
                 analisis.putAll(analisisGemini);
-                log.info("✅ Análisis predictivo obtenido desde Gemini AI");
+                log.info("✅ Análisis predictivo obtenido desde Gemini AI exitosamente");
+                log.info("📊 Componentes del análisis: {}", analisisGemini.keySet());
             } else {
                 // Fallback con datos inteligentes basados en datos reales
                 analisis = generarAnalisisFallback(mensajes, ruc);
-                log.warn("⚠️ Usando análisis fallback - Gemini AI no disponible");
+                log.warn("⚠️ Usando análisis fallback - Gemini AI no disponible o falló");
             }
             
             log.info("✅ Análisis predictivo completado exitosamente");
@@ -456,8 +456,7 @@ public class DashboardService {
     }
 
     // ==================== MÉTODOS AUXILIARES ====================
-    
-    private int contarCorreosNuevos(List<MensajeSunat> mensajes, int dias) {
+      private int contarCorreosNuevos(List<MensajeSunat> mensajes, int dias) {
         LocalDateTime fechaLimite = LocalDateTime.now().minusDays(dias);
         
         return (int) mensajes.stream()
@@ -466,6 +465,26 @@ public class DashboardService {
                 try {
                     LocalDateTime fechaMensaje = parsearFechaMensaje(m.getVcFechaEnvio());
                     return fechaMensaje.isAfter(fechaLimite);
+                } catch (Exception e) {
+                    return false;
+                }
+            })
+            .count();
+    }
+
+    /**
+     * Cuenta correos recibidos hoy específicamente
+     */
+    private int contarCorreosHoy(List<MensajeSunat> mensajes) {
+        LocalDateTime inicioDelDia = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
+        LocalDateTime finDelDia = LocalDateTime.now().withHour(23).withMinute(59).withSecond(59).withNano(999999999);
+        
+        return (int) mensajes.stream()
+            .filter(m -> {
+                if (m.getVcFechaEnvio() == null) return false;
+                try {
+                    LocalDateTime fechaMensaje = parsearFechaMensaje(m.getVcFechaEnvio());
+                    return fechaMensaje.isAfter(inicioDelDia) && fechaMensaje.isBefore(finDelDia);
                 } catch (Exception e) {
                     return false;
                 }
@@ -957,11 +976,29 @@ public class DashboardService {
         recomendaciones.add("Mantener documentación contable actualizada");
         
         analisis.put("recomendaciones", recomendaciones);
-        
-        // Score básico
+          // Score dinámico basado en datos reales
         int score = calcularScoreBasico(muyImportantes, fiscalizaciones, multas, mensajes.size());
         analisis.put("scoreCompliance", score);
-        analisis.put("nivelRiesgo", score >= 80 ? "BAJO" : (score >= 60 ? "MEDIO" : "ALTO"));
+        
+        // Nivel de riesgo dinámico
+        String nivelRiesgo;
+        if (score >= 80) {
+            nivelRiesgo = "BAJO";
+        } else if (score >= 60) {
+            nivelRiesgo = "MEDIO";  
+        } else {
+            nivelRiesgo = "ALTO";
+        }
+        analisis.put("nivelRiesgo", nivelRiesgo);
+        
+        // Agregar métricas adicionales para el análisis
+        analisis.put("totalMensajes", mensajes.size());
+        analisis.put("muyImportantes", muyImportantes);
+        analisis.put("fiscalizaciones", fiscalizaciones);
+        analisis.put("multas", multas);
+        
+        log.info("📊 Análisis fallback generado - Score: {}, Riesgo: {}, Datos: {} mensajes", 
+                score, nivelRiesgo, mensajes.size());
         
         return analisis;
     }
@@ -992,25 +1029,34 @@ public class DashboardService {
             return "BAJO";
         }
     }
-    
-    /**
-     * Calcula score básico de cumplimiento
+      /**
+     * Calcula score básico de cumplimiento - MEJORADO PARA SER DINÁMICO
      */
     private int calcularScoreBasico(long muyImportantes, long fiscalizaciones, long multas, int totalMensajes) {
         int score = 100;
         
-        // Penalizaciones
-        score -= (int) (fiscalizaciones * 20);  // -20 por cada fiscalización
-        score -= (int) (muyImportantes * 5);    // -5 por cada muy importante
-        score -= (int) (multas * 10);           // -10 por cada multa
+        // Penalizaciones basadas en riesgo real
+        score -= (int) (fiscalizaciones * 15);  // -15 por cada fiscalización
+        score -= (int) (muyImportantes * 3);    // -3 por cada muy importante
+        score -= (int) (multas * 8);            // -8 por cada multa
         
-        // Bonificación por volumen controlado
-        if (totalMensajes < 10) {
-            score += 5;
+        // Penalización adicional si hay muchos críticos
+        if (muyImportantes > 10) {
+            score -= 10; // Penalización extra por volumen alto
         }
         
-        return Math.max(0, Math.min(100, score));
-    }    /**
+        // Bonificación por gestión eficiente
+        if (totalMensajes > 0) {
+            long clasificados = muyImportantes + fiscalizaciones + multas;
+            double porcentajeClasificado = (clasificados * 100.0) / totalMensajes;
+            
+            if (porcentajeClasificado < 20) {
+                score += 10; // Bonificación por pocos problemas
+            }
+        }
+        
+        return Math.max(40, Math.min(95, score)); // Score entre 40 y 95 para ser realista
+    }/**
      * Obtiene alertas críticas que requieren atención urgente - MEJORADAS CON DATOS REALES
      * Este método filtra solo las alertas más importantes basadas en etiquetas reales
      */
